@@ -24,6 +24,7 @@
       <a href="#exams">Kỳ thi</a>
       <a href="#resources">Học liệu</a>
       <a href="#quality">Chất lượng đề</a>
+      <a href="admin.html" id="admin-link" hidden>Quản trị</a>
     </nav>
     <button class="profile-chip" id="auth-button"><span>👤</span><span id="auth-label">Đăng nhập</span></button>
   </header>
@@ -86,7 +87,7 @@
 
   <footer><span>LMS ExamHub © 2026 | Made by <a href="https://zalo.me/0907218089">Huycomf</a></span><span>Thầy Phan Ngọc Huy · Trường THPT Lộc Ninh · TP Đồng Nai</span></footer>
 
-  <dialog id="auth-modal"><form method="dialog" class="modal"><button type="button" class="modal-close" data-close-modal aria-label="Đóng">×</button><span class="eyebrow">TÀI KHOẢN</span><h2>Đăng nhập hệ thống</h2><label>Email<input id="email" type="email" placeholder="teacher@school.edu.vn" required></label><label>Mật khẩu<input id="password" type="password" minlength="6" required></label><button class="button primary full" id="login-button" type="button">Đăng nhập</button><p class="form-message" id="auth-message"></p></form></dialog>
+  <dialog id="auth-modal"><form method="dialog" class="modal"><button type="button" class="modal-close" data-close-modal aria-label="Đóng">×</button><span class="eyebrow">TÀI KHOẢN</span><h2>Đăng nhập hệ thống</h2><div id="login-fields"><label>Email<input id="email" type="email" placeholder="teacher@school.edu.vn" required autocomplete="username"></label><label>Mật khẩu<input id="password" type="password" minlength="6" required autocomplete="current-password"></label><button class="button primary full" id="login-button" type="button">Đăng nhập</button></div><div id="account-panel" hidden><p>Đã đăng nhập với tài khoản <strong id="account-name"></strong>.</p><a class="button secondary full" id="admin-button" href="admin.html" hidden>Mở trang quản trị</a><button class="button secondary full" id="logout-button" type="button">Đăng xuất</button></div><p class="form-message" id="auth-message"></p></form></dialog>
   <dialog id="blueprint-modal" class="wide-dialog"><form method="dialog" class="modal wide"><button type="button" class="modal-close" data-close-modal aria-label="Đóng">×</button><span class="eyebrow">BLUEPRINT 2026</span><h2>Ma trận đề thi thử</h2><div class="blueprint-table"><div><b>Nhận biết</b><span>20–30%</span></div><div><b>Thông hiểu</b><span>30–40%</span></div><div><b>Vận dụng</b><span>30–40%</span></div></div><p>Thông số cụ thể được quản trị theo từng môn và phiên bản quy chế; không cố định trong mã giao diện.</p></form></dialog>
   <dialog id="ai-modal" class="wide-dialog"><form method="dialog" class="modal wide"><button type="button" class="modal-close" data-close-modal aria-label="Đóng">×</button><span class="eyebrow">AI CÓ KIỂM SOÁT</span><h2>Tạo bản nháp đề từ ma trận</h2><p>Quy trình: chọn môn → chọn ma trận → AI sinh câu hỏi và giải thích → kiểm tra trùng lặp → chuyên gia phản biện → phê duyệt. Khóa AI phải nằm ở dịch vụ máy chủ, tuyệt đối không lưu trong mã GitHub Pages.</p><button class="button primary" value="cancel">Đã hiểu</button></form></dialog>
   <script src="config.js"></script>
