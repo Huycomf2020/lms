@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#176b3a">
+  <meta name="description" content="AEEF ExamHub - Hệ thống thi thử TN THPT 2026">
+  <title>AEEF ExamHub | Thi thử TN THPT 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#overview" aria-label="AEEF ExamHub">
+      <span class="brand-mark">A</span>
+      <span><strong>AEEF ExamHub</strong><small>TN THPT 2026</small></span>
+    </a>
+    <button class="mobile-menu" id="mobile-menu" aria-label="Mở trình đơn">☰</button>
+    <nav id="top-nav" aria-label="Điều hướng chính">
+      <a href="#overview" class="active">Tổng quan</a>
+      <a href="#exams">Kỳ thi</a>
+      <a href="#resources">Học liệu</a>
+      <a href="#quality">Chất lượng đề</a>
+    </nav>
+    <button class="profile-chip" id="auth-button"><span>👤</span><span id="auth-label">Đăng nhập</span></button>
+  </header>
+
+  <main>
+    <section class="hero" id="overview">
+      <div class="hero-copy">
+        <span class="eyebrow">NỀN TẢNG KHẢO THÍ SỐ</span>
+        <h1>Luyện thi có chiến lược.<br><em>Đo lường bằng dữ liệu.</em></h1>
+        <p>Thi thử theo cấu trúc TN THPT 2026, phân tích năng lực theo chủ đề và cải thiện bằng lộ trình học cá nhân hóa.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#exams">Bắt đầu thi thử <span>→</span></a>
+          <button class="button secondary" data-open-modal="blueprint-modal">Xem ma trận đề</button>
+        </div>
+        <div class="trust-row"><span>✓ Ma trận chuẩn hóa</span><span>✓ Lưu bài tự động</span><span>✓ Nhật ký minh bạch</span></div>
+      </div>
+      <div class="hero-panel">
+        <div class="panel-head"><span>Tiến độ tuần này</span><span class="live-dot">Đang học</span></div>
+        <div class="score-ring"><div><strong>72</strong><small>/100</small></div></div>
+        <p class="center"><strong>Mức hiện tại: Khá</strong><br><small>Tăng 8 điểm so với tuần trước</small></p>
+        <div class="mini-bars">
+          <div><span>Toán</span><i><b style="width:78%"></b></i><strong>78%</strong></div>
+          <div><span>Ngữ văn</span><i><b style="width:65%"></b></i><strong>65%</strong></div>
+          <div><span>Tiếng Anh</span><i><b style="width:82%"></b></i><strong>82%</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="exams">
+      <div class="section-title"><div><span class="eyebrow">PHÒNG THI TRỰC TUYẾN</span><h2>Kỳ thi nổi bật</h2></div><span class="muted">Dữ liệu mẫu · sẵn sàng kết nối Supabase</span></div>
+      <div class="exam-grid" id="exam-grid"></div>
+    </section>
+
+    <section class="section soft" id="resources">
+      <div class="section-title"><div><span class="eyebrow">HỆ SINH THÁI HỌC TẬP</span><h2>Học liệu và công cụ</h2></div></div>
+      <div class="resource-grid">
+        <a class="resource-card featured" href="https://huycomf2020.github.io/phong_hoc_ao/index.html" target="_blank" rel="noopener">
+          <span class="icon">◈</span><div><small>HỌC LIỆU NGOÀI</small><h3>Phòng học ảo</h3><p>Không gian học tập tương tác và học liệu số.</p></div><span class="arrow">↗</span>
+        </a>
+        <a class="resource-card" href="https://huycomf2020.github.io/giao_vien/index.html" target="_blank" rel="noopener">
+          <span class="icon">♙</span><div><small>DÀNH CHO GIÁO VIÊN</small><h3>Không gian giáo viên</h3><p>Quản lý lớp học, học sinh và hoạt động chuyên môn.</p></div><span class="arrow">↗</span>
+        </a>
+        <button class="resource-card" data-open-modal="ai-modal">
+          <span class="icon">✦</span><div><small>TRỢ LÝ KHẢO THÍ</small><h3>AI tạo đề theo ma trận</h3><p>Sinh bản nháp câu hỏi để chuyên gia phản biện và phê duyệt.</p></div><span class="arrow">→</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="section" id="quality">
+      <div class="quality-layout">
+        <div><span class="eyebrow">KIỂM ĐỊNH CHẤT LƯỢNG</span><h2>Mỗi câu hỏi đều có vòng đời</h2><p class="lead">Từ ma trận, biên soạn, phản biện độc lập đến hậu kiểm bằng dữ liệu. AI chỉ tạo bản nháp; con người chịu trách nhiệm phê duyệt.</p></div>
+        <ol class="workflow">
+          <li><b>01</b><span><strong>Ma trận & chuẩn đầu ra</strong><small>Khóa phạm vi kiến thức và mức độ nhận thức.</small></span></li>
+          <li><b>02</b><span><strong>Biên soạn & phản biện</strong><small>Tách biệt người viết và người duyệt.</small></span></li>
+          <li><b>03</b><span><strong>Thi thử & hậu kiểm</strong><small>Độ khó, độ phân biệt và hiệu quả phương án nhiễu.</small></span></li>
+        </ol>
+      </div>
+    </section>
+  </main>
+
+  <footer><span>AEEF ExamHub © 2026 | Made by <a href="https://zalo.me/0907218089">Huycomf</a></span><span>Khảo thí khoa học · Học tập nhân văn</span></footer>
+
+  <dialog id="auth-modal"><form method="dialog" class="modal"><button class="modal-close" aria-label="Đóng">×</button><span class="eyebrow">TÀI KHOẢN</span><h2>Đăng nhập hệ thống</h2><label>Email<input id="email" type="email" placeholder="teacher@school.edu.vn" required></label><label>Mật khẩu<input id="password" type="password" minlength="6" required></label><button class="button primary full" id="login-button" type="button">Đăng nhập</button><p class="form-message" id="auth-message"></p></form></dialog>
+  <dialog id="blueprint-modal"><form method="dialog" class="modal wide"><button class="modal-close" aria-label="Đóng">×</button><span class="eyebrow">BLUEPRINT 2026</span><h2>Ma trận đề thi thử</h2><div class="blueprint-table"><div><b>Nhận biết</b><span>20–30%</span></div><div><b>Thông hiểu</b><span>30–40%</span></div><div><b>Vận dụng</b><span>30–40%</span></div></div><p>Thông số cụ thể được quản trị theo từng môn và phiên bản quy chế; không cố định trong mã giao diện.</p></form></dialog>
+  <dialog id="ai-modal"><form method="dialog" class="modal wide"><button class="modal-close" aria-label="Đóng">×</button><span class="eyebrow">AI CÓ KIỂM SOÁT</span><h2>Tạo bản nháp đề từ ma trận</h2><p>Quy trình: chọn môn → chọn ma trận → AI sinh câu hỏi và giải thích → kiểm tra trùng lặp → chuyên gia phản biện → phê duyệt. Khóa AI phải nằm ở dịch vụ máy chủ, tuyệt đối không lưu trong mã GitHub Pages.</p><button class="button primary" value="cancel">Đã hiểu</button></form></dialog>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
