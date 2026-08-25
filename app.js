@@ -34,4 +34,6 @@ document.querySelector("#mobile-menu").addEventListener("click",()=>document.que
 document.querySelector("#auth-button").addEventListener("click",()=>document.querySelector("#auth-modal").showModal());
 document.querySelector("#login-button").addEventListener("click",login);
 document.querySelectorAll("[data-open-modal]").forEach(el=>el.addEventListener("click",()=>document.querySelector(`#${el.dataset.openModal}`).showModal()));
+document.querySelectorAll("[data-close-modal]").forEach(el=>el.addEventListener("click",()=>el.closest("dialog").close()));
+document.querySelectorAll("dialog").forEach(dialog=>dialog.addEventListener("click",event=>{if(event.target===dialog)dialog.close();}));
 loadExams();

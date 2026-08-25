@@ -1,0 +1,7 @@
+.brand-mark{font-size:16px}
+.wide-dialog{width:min(92vw,620px);max-width:min(92vw,620px);overflow:hidden}
+.wide-dialog .modal.wide{width:100%;max-width:100%;overflow-wrap:anywhere}
+.modal{width:100%;max-width:100%;overflow-x:hidden}
+.modal-close{z-index:2;width:40px;height:40px;display:grid;place-items:center;border-radius:50%}
+.modal-close:hover{background:var(--mint);color:var(--green)}
+@media(max-width:560px){.wide-dialog{width:calc(100vw - 24px)}}
