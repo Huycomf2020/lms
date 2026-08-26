@@ -1,51 +1,67 @@
 const config=window.LMS_CONFIG;
-const questions=[
- {id:"q1",stem:"Cho hàm số f(x) = x³ − 3x. Giá trị của f'(2) bằng",options:["3","6","9","12"]},
- {id:"q2",stem:"Một lớp có 20 học sinh nam và 25 học sinh nữ. Chọn ngẫu nhiên một học sinh. Xác suất chọn được học sinh nữ là",options:["4/9","5/9","1/2","5/4"]},
- {id:"q3",stem:"Trong không gian Oxyz, khoảng cách từ điểm M(1; 2; 2) đến gốc tọa độ O bằng",options:["2","3","4","9"]},
- {id:"q4",stem:"Nghiệm của phương trình log₂(x) = 3 là",options:["6","8","9","12"]},
- {id:"q5",stem:"Cấp số cộng có u₁ = 2 và công sai d = 3. Giá trị u₅ bằng",options:["11","12","14","17"]}
-];
-let current=0,remaining=90*60,violations=0,started=false,lastViolation=0;
+const examId=new URLSearchParams(location.search).get("id")||"";
+let questions=[],exam=null,user=null,attemptId="",current=0,remaining=0,violations=0,started=false,finished=false,lastViolation=0,timerId=null;
 const answers={};
-const token=sessionStorage.getItem("lms_access_token")||"";
-const attemptId=crypto.randomUUID();
+let token=sessionStorage.getItem("lms_access_token")||"";
+let refreshToken=sessionStorage.getItem("lms_refresh_token")||"";
 
-function render(){
- const q=questions[current];document.querySelector("#question-index").textContent=`Câu ${current+1}/${questions.length}`;document.querySelector("#question-stem").textContent=q.stem;
- document.querySelector("#options").innerHTML=q.options.map((x,i)=>`<button class="option ${answers[q.id]===i?"selected":""}" data-option="${i}"><b>${String.fromCharCode(65+i)}</b><span>${x}</span></button>`).join("");
- document.querySelectorAll("[data-option]").forEach(el=>el.onclick=()=>{answers[q.id]=Number(el.dataset.option);render();queueSave("response",{question_id:q.id,selected_option:answers[q.id]});});
- document.querySelector("#question-map").innerHTML=questions.map((x,i)=>`<button data-index="${i}" class="${i===current?"active":""} ${answers[x.id]!==undefined?"answered":""}">${i+1}</button>`).join("");
- document.querySelectorAll("[data-index]").forEach(el=>el.onclick=()=>{current=Number(el.dataset.index);render();});
-}
-function tick(){remaining--;const h=String(Math.floor(remaining/3600)).padStart(2,"0"),m=String(Math.floor(remaining%3600/60)).padStart(2,"0"),s=String(remaining%60).padStart(2,"0");document.querySelector("#timer").textContent=`${h}:${m}:${s}`;if(remaining<=0)finish();}
-async function start(){
- started=true;document.querySelector("#exam-gate").classList.add("hidden");
- try{await document.documentElement.requestFullscreen();}catch(e){violate("Không thể vào chế độ toàn màn hình");}
- try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});document.querySelector("#camera").srcObject=stream;}catch(e){violate("Webcam bị từ chối hoặc không khả dụng");}
- setInterval(tick,1000);render();queueSave("start",{exam_id:new URLSearchParams(location.search).get("id")||"demo"});
-}
-function violate(message){
- if(!started)return;const now=Date.now();if(now-lastViolation<1200)return;lastViolation=now;violations++;document.querySelector("#violation-count").textContent=violations;document.querySelector("#warning-message").textContent=message;document.querySelector("#warning-dialog").showModal();queueSave("violation",{type:message,occurred_at:new Date().toISOString(),page_visibility:document.visibilityState});
-}
-async function queueSave(kind,payload){
- const event={attempt_id:attemptId,kind,payload,user_agent:navigator.userAgent,created_at:new Date().toISOString()};
- const queue=JSON.parse(localStorage.getItem("lms_event_queue")||"[]");queue.push(event);localStorage.setItem("lms_event_queue",JSON.stringify(queue.slice(-200)));
- if(!config.appsScriptUrl)return;
- try{await fetch(config.appsScriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify(event)});document.querySelector("#connection").textContent="● Đã lưu";}catch(e){document.querySelector("#connection").textContent="● Chờ đồng bộ";}
- if(token && kind==="violation"){
-   fetch(`${config.supabaseUrl}/rest/v1/violations`,{method:"POST",headers:{apikey:config.supabasePublishableKey,Authorization:`Bearer ${token}`,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({attempt_id:attemptId,event_type:payload.type,details:payload})}).catch(()=>{});
+const headers=(extra={})=>({apikey:config.supabasePublishableKey,Authorization:`Bearer ${token}`,...extra});
+async function api(path,options={}){
+ let response=await fetch(`${config.supabaseUrl}${path}`,{...options,headers:{...headers(),...(options.headers||{})}});
+ if(response.status===401&&refreshToken){
+  const renewed=await fetch(`${config.supabaseUrl}/auth/v1/token?grant_type=refresh_token`,{method:"POST",headers:{apikey:config.supabasePublishableKey,"Content-Type":"application/json"},body:JSON.stringify({refresh_token:refreshToken})});
+  if(renewed.ok){const session=await renewed.json();token=session.access_token;refreshToken=session.refresh_token||refreshToken;sessionStorage.setItem("lms_access_token",token);sessionStorage.setItem("lms_refresh_token",refreshToken);response=await fetch(`${config.supabaseUrl}${path}`,{...options,headers:{...headers(),...(options.headers||{})}})}
  }
+ return response;
 }
-function finish(){queueSave("finish",{answers,remaining,violations});if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});document.querySelector("#finish-dialog").showModal();}
-document.querySelector("#consent").onchange=e=>document.querySelector("#start-exam").disabled=!e.target.checked;
-document.querySelector("#start-exam").onclick=start;document.querySelector("#prev").onclick=()=>{current=Math.max(0,current-1);render();};document.querySelector("#next").onclick=()=>{current=Math.min(questions.length-1,current+1);render();};document.querySelector("#submit").onclick=finish;
-document.querySelector("#return-exam").onclick=async()=>{document.querySelector("#warning-dialog").close();if(!document.fullscreenElement)try{await document.documentElement.requestFullscreen();}catch(e){}};
-document.addEventListener("visibilitychange",()=>{if(document.hidden)violate("Rời khỏi màn hình làm bài hoặc chuyển ứng dụng");});
-document.addEventListener("fullscreenchange",()=>{if(started&&!document.fullscreenElement)violate("Thoát chế độ toàn màn hình");});
-document.addEventListener("contextmenu",e=>{e.preventDefault();violate("Sử dụng chuột phải");});
-document.addEventListener("copy",e=>{e.preventDefault();violate("Sao chép nội dung đề thi");});
-document.addEventListener("cut",e=>{e.preventDefault();violate("Cắt nội dung đề thi");});
-document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["c","x","u","s","p"].includes(e.key.toLowerCase())){e.preventDefault();violate(`Sử dụng tổ hợp phím bị hạn chế (${e.key.toUpperCase()})`);}if(e.key==="PrintScreen")violate("Sử dụng phím chụp màn hình");});
-window.addEventListener("beforeunload",e=>{if(started){e.preventDefault();e.returnValue="";}});
-render();
+function formatTime(value){const safe=Math.max(0,value),h=String(Math.floor(safe/3600)).padStart(2,"0"),m=String(Math.floor(safe%3600/60)).padStart(2,"0"),s=String(safe%60).padStart(2,"0");return`${h}:${m}:${s}`}
+function setGateError(message){document.querySelector("#gate-title").textContent="Không thể mở kỳ thi";document.querySelector("#gate-status").textContent=message;document.querySelector("#consent").disabled=true;document.querySelector("#start-exam").disabled=true;document.querySelector("#connection").textContent="● Lỗi tải đề"}
+async function loadExam(){
+ if(!examId||!token){setGateError("Vui lòng đăng nhập và chọn kỳ thi được phân công từ trang chính.");return}
+ try{
+  const userRes=await api("/auth/v1/user");if(!userRes.ok)throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");user=await userRes.json();
+  const select=encodeURIComponent("id,title,duration_minutes,status,exam_questions(position,points,question_items(id,stem,options,item_type))");
+  const examRes=await api(`/rest/v1/exams?id=eq.${encodeURIComponent(examId)}&status=eq.published&select=${select}`);
+  if(!examRes.ok)throw new Error("Không đọc được dữ liệu kỳ thi.");
+  const rows=await examRes.json();if(!rows.length)throw new Error("Kỳ thi không tồn tại, chưa được xuất bản hoặc chưa phân công cho tài khoản này.");
+  exam=rows[0];questions=(exam.exam_questions||[]).sort((a,b)=>a.position-b.position).map(row=>({id:row.question_items.id,stem:row.question_items.stem,options:Array.isArray(row.question_items.options)?row.question_items.options:[],itemType:row.question_items.item_type}));
+  if(!questions.length)throw new Error("Kỳ thi chưa có câu hỏi.");
+  remaining=exam.duration_minutes*60;document.querySelector("#exam-name").textContent=exam.title;document.querySelector("#timer").textContent=formatTime(remaining);document.title=`${exam.title} | LMS ExamHub`;
+  document.querySelector("#gate-title").textContent=exam.title;document.querySelector("#gate-status").textContent=`${questions.length} câu · ${exam.duration_minutes} phút. Hãy kiểm tra thiết bị trước khi bắt đầu.`;document.querySelector("#consent").disabled=false;document.querySelector("#connection").textContent="● Đề đã sẵn sàng";render();
+ }catch(error){setGateError(error.message)}
+}
+function render(){
+ if(!questions.length)return;const q=questions[current];document.querySelector("#question-index").textContent=`Câu ${current+1}/${questions.length}`;document.querySelector("#question-stem").textContent=q.stem;document.querySelector("#question-type").textContent=q.itemType==="single_choice"?"PHẦN I · TRẮC NGHIỆM":"CÂU HỎI";
+ const options=document.querySelector("#options");options.replaceChildren();q.options.forEach((value,index)=>{const button=document.createElement("button");button.className=`option ${answers[q.id]===index?"selected":""}`;button.dataset.option=index;const label=document.createElement("b");label.textContent=String.fromCharCode(65+index);const text=document.createElement("span");text.textContent=String(value);button.append(label,text);button.onclick=()=>selectAnswer(q.id,index);options.append(button)});
+ const map=document.querySelector("#question-map");map.replaceChildren();questions.forEach((item,index)=>{const button=document.createElement("button");button.textContent=index+1;button.className=`${index===current?"active":""} ${answers[item.id]!==undefined?"answered":""}`;button.onclick=()=>{current=index;render()};map.append(button)});
+ document.querySelector("#prev").disabled=current===0;document.querySelector("#next").disabled=current===questions.length-1;
+}
+async function ensureAttempt(){
+ const query=`/rest/v1/attempts?exam_id=eq.${encodeURIComponent(examId)}&student_id=eq.${encodeURIComponent(user.id)}&select=id,status,started_at&limit=1`;
+ let response=await api(query);if(!response.ok)throw new Error("Không thể kiểm tra lượt thi.");let rows=await response.json();
+ if(rows.length){if(rows[0].status==="submitted")throw new Error("Tài khoản này đã nộp bài cho kỳ thi.");attemptId=rows[0].id;return}
+ response=await api("/rest/v1/attempts",{method:"POST",headers:{"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify({exam_id:examId,student_id:user.id,status:"in_progress"})});
+ if(!response.ok)throw new Error("Không thể tạo lượt thi. Hãy kiểm tra lại phân công kỳ thi.");attemptId=(await response.json())[0].id;
+}
+async function start(){
+ document.querySelector("#start-exam").disabled=true;document.querySelector("#gate-status").textContent="Đang tạo lượt thi…";
+ try{await ensureAttempt()}catch(error){setGateError(error.message);return}
+ started=true;document.querySelector("#exam-gate").classList.add("hidden");
+ try{await document.documentElement.requestFullscreen()}catch(e){violate("Không thể vào chế độ toàn màn hình")}
+ try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});document.querySelector("#camera").srcObject=stream}catch(e){violate("Webcam bị từ chối hoặc không khả dụng")}
+ timerId=setInterval(tick,1000);render();queueSave("start",{exam_id:examId});
+}
+function tick(){if(finished)return;remaining--;document.querySelector("#timer").textContent=formatTime(remaining);if(remaining<=0)finish()}
+async function selectAnswer(questionId,index){answers[questionId]=index;render();if(!attemptId)return;const response=await api("/rest/v1/responses?on_conflict=attempt_id,question_id",{method:"POST",headers:{"Content-Type":"application/json",Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify({attempt_id:attemptId,question_id:questionId,answer:{selected_option:index}})});document.querySelector("#connection").textContent=response.ok?"● Đã lưu":"● Chờ đồng bộ";queueSave("response",{question_id:questionId,selected_option:index})}
+function violate(message){if(!started||finished)return;const now=Date.now();if(now-lastViolation<1200)return;lastViolation=now;violations++;document.querySelector("#violation-count").textContent=violations;document.querySelector("#warning-message").textContent=message;document.querySelector("#warning-dialog").showModal();queueSave("violation",{type:message,occurred_at:new Date().toISOString(),page_visibility:document.visibilityState})}
+async function queueSave(kind,payload){
+ const event={attempt_id:attemptId,kind,payload,user_agent:navigator.userAgent,created_at:new Date().toISOString()},queue=JSON.parse(localStorage.getItem("lms_event_queue")||"[]");queue.push(event);localStorage.setItem("lms_event_queue",JSON.stringify(queue.slice(-200)));
+ if(config.appsScriptUrl)fetch(config.appsScriptUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain"},body:JSON.stringify(event)}).catch(()=>{});
+ if(token&&attemptId&&kind==="violation")await api("/rest/v1/violations",{method:"POST",headers:{"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({attempt_id:attemptId,event_type:payload.type,details:payload})}).catch(()=>{});
+}
+async function finish(){if(finished||!attemptId)return;finished=true;clearInterval(timerId);document.querySelector("#submit").disabled=true;await queueSave("finish",{answers,remaining,violations});const response=await api(`/rest/v1/attempts?id=eq.${attemptId}`,{method:"PATCH",headers:{"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify({status:"submitted",submitted_at:new Date().toISOString()})});if(!response.ok){finished=false;document.querySelector("#submit").disabled=false;document.querySelector("#connection").textContent="● Chưa thể nộp bài";return}if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});document.querySelector("#finish-dialog").showModal()}
+document.querySelector("#consent").onchange=e=>document.querySelector("#start-exam").disabled=!e.target.checked||!exam;
+document.querySelector("#start-exam").onclick=start;document.querySelector("#prev").onclick=()=>{current=Math.max(0,current-1);render()};document.querySelector("#next").onclick=()=>{current=Math.min(questions.length-1,current+1);render()};document.querySelector("#submit").onclick=finish;
+document.querySelector("#return-exam").onclick=async()=>{document.querySelector("#warning-dialog").close();if(!document.fullscreenElement)try{await document.documentElement.requestFullscreen()}catch(e){}};
+document.addEventListener("visibilitychange",()=>{if(document.hidden)violate("Rời khỏi màn hình làm bài hoặc chuyển ứng dụng")});document.addEventListener("fullscreenchange",()=>{if(started&&!finished&&!document.fullscreenElement)violate("Thoát chế độ toàn màn hình")});document.addEventListener("contextmenu",e=>{e.preventDefault();violate("Sử dụng chuột phải")});document.addEventListener("copy",e=>{e.preventDefault();violate("Sao chép nội dung đề thi")});document.addEventListener("cut",e=>{e.preventDefault();violate("Cắt nội dung đề thi")});document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["c","x","u","s","p"].includes(e.key.toLowerCase())){e.preventDefault();violate(`Sử dụng tổ hợp phím bị hạn chế (${e.key.toUpperCase()})`)}if(e.key==="PrintScreen")violate("Sử dụng phím chụp màn hình")});window.addEventListener("beforeunload",e=>{if(started&&!finished){e.preventDefault();e.returnValue=""}});
+loadExam();
