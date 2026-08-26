@@ -1,0 +1,4 @@
+.account-link { display:block; margin:13px auto 0; border:0; background:none; color:var(--green); font-weight:700; cursor:pointer; }
+.password-help,.password-rule { color:var(--muted); font-size:12px; line-height:1.6; }
+.password-rule { display:block; margin:-4px 0 16px; }
+#account-panel .button { margin-top:10px; }
