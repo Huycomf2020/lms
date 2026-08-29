@@ -1,7 +1,7 @@
 .export-actions{display:flex;gap:8px}
 .enroll-form{display:grid;grid-template-columns:1fr auto;gap:10px;margin:16px 0}
 .enroll-form input{padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit}
-.assign-class-form{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;align-items:end;gap:10px;padding:14px;margin:16px 0 8px;background:#f2f8f4;border:1px solid #cfe3d6;border-radius:12px}.assign-class-form label{font-size:11px;font-weight:800}.assign-class-form select,.assign-class-form input{display:block;width:100%;margin-top:6px;padding:11px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit}.schedule-note{margin:0 0 12px;color:var(--muted);font-size:10px}@media(max-width:900px){.assign-class-form{grid-template-columns:1fr 1fr}.assign-class-form .exam-field{grid-column:span 2}}
+.assign-class-form{display:grid;grid-template-columns:1.3fr 1fr 1fr .7fr auto;align-items:end;gap:10px;padding:14px;margin:16px 0 8px;background:#f2f8f4;border:1px solid #cfe3d6;border-radius:12px}.assign-class-form label{font-size:11px;font-weight:800}.assign-class-form select,.assign-class-form input{display:block;width:100%;margin-top:6px;padding:11px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit}.schedule-note{margin:0 0 12px;color:var(--muted);font-size:10px}@media(max-width:1050px){.assign-class-form{grid-template-columns:1fr 1fr}.assign-class-form .exam-field{grid-column:span 2}}
 @media print{
  body.print-analytics .admin-top,body.print-analytics .admin-nav,body.print-analytics .admin-heading .heading-actions,body.print-analytics #question-toolbar,body.print-analytics #analytics-toolbar{display:none!important}
  body.print-analytics .admin-shell{display:block}
