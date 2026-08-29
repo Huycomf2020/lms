@@ -1,6 +1,6 @@
 const config=window.LMS_CONFIG;
 const examId=new URLSearchParams(location.search).get("id")||"";
-let questions=[],exam=null,user=null,attemptId="",current=0,remaining=0,violations=0,started=false,finished=false,lastViolation=0,timerId=null;
+let questions=[],exam=null,user=null,attemptId="",current=0,remaining=0,violations=0,started=false,finished=false,lastViolation=0,timerId=null,assignmentDeadline=0;
 const answers={};
 let token=sessionStorage.getItem("lms_access_token")||"";
 let refreshToken=sessionStorage.getItem("lms_refresh_token")||"";
@@ -20,13 +20,14 @@ async function loadExam(){
  if(!examId||!token){setGateError("Vui lòng đăng nhập và chọn kỳ thi được phân công từ trang chính.");return}
  try{
   const userRes=await api("/auth/v1/user");if(!userRes.ok)throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");user=await userRes.json();
+  const assignmentRes=await api(`/rest/v1/exam_assignments?exam_id=eq.${encodeURIComponent(examId)}&student_id=eq.${encodeURIComponent(user.id)}&status=eq.active&select=available_from,available_until,duration_override_minutes&limit=1`);if(!assignmentRes.ok)throw new Error("Không đọc được lịch phân công kỳ thi.");const assignments=await assignmentRes.json();if(!assignments.length)throw new Error("Kỳ thi chưa được phân công cho tài khoản này.");const assignment=assignments[0],now=Date.now();assignmentDeadline=assignment.available_until?new Date(assignment.available_until).getTime():0;if(assignment.available_from&&now<new Date(assignment.available_from).getTime())throw new Error(`Kỳ thi mở lúc ${new Date(assignment.available_from).toLocaleString("vi-VN")}.`);if(assignmentDeadline&&now>assignmentDeadline)throw new Error(`Kỳ thi đã đóng lúc ${new Date(assignment.available_until).toLocaleString("vi-VN")}.`);
   const select=encodeURIComponent("id,title,duration_minutes,status,exam_questions(position,points,exam_sections(code,title,instructions,stimulus,start_position,end_position),question_items(id,stem,options,item_type))");
   const examRes=await api(`/rest/v1/exams?id=eq.${encodeURIComponent(examId)}&status=eq.published&select=${select}`);
   if(!examRes.ok)throw new Error("Không đọc được dữ liệu kỳ thi.");
   const rows=await examRes.json();if(!rows.length)throw new Error("Kỳ thi không tồn tại, chưa được xuất bản hoặc chưa phân công cho tài khoản này.");
-  exam=rows[0];questions=(exam.exam_questions||[]).sort((a,b)=>a.position-b.position).map(row=>({id:row.question_items.id,position:row.position,stem:row.question_items.stem,options:Array.isArray(row.question_items.options)?row.question_items.options:[],itemType:row.question_items.item_type,section:row.exam_sections||null}));
+  exam=rows[0];if(assignment.duration_override_minutes)exam.duration_minutes=assignment.duration_override_minutes;questions=(exam.exam_questions||[]).sort((a,b)=>a.position-b.position).map(row=>({id:row.question_items.id,position:row.position,stem:row.question_items.stem,options:Array.isArray(row.question_items.options)?row.question_items.options:[],itemType:row.question_items.item_type,section:row.exam_sections||null}));
   if(!questions.length)throw new Error("Kỳ thi chưa có câu hỏi.");
-  remaining=exam.duration_minutes*60;document.querySelector("#exam-name").textContent=exam.title;document.querySelector("#timer").textContent=formatTime(remaining);document.title=`${exam.title} | LMS ExamHub`;
+  remaining=Math.min(exam.duration_minutes*60,assignmentDeadline?Math.max(0,Math.floor((assignmentDeadline-Date.now())/1000)):Infinity);document.querySelector("#exam-name").textContent=exam.title;document.querySelector("#timer").textContent=formatTime(remaining);document.title=`${exam.title} | LMS ExamHub`;
   document.querySelector("#gate-title").textContent=exam.title;document.querySelector("#gate-status").textContent=`${questions.length} câu · ${exam.duration_minutes} phút. Hãy kiểm tra thiết bị trước khi bắt đầu.`;document.querySelector("#consent").disabled=false;document.querySelector("#connection").textContent="● Đề đã sẵn sàng";render();await restoreSubmittedAttempt();
  }catch(error){setGateError(error.message)}
 }
@@ -40,7 +41,7 @@ function render(){
 async function ensureAttempt(){
  const query=`/rest/v1/attempts?exam_id=eq.${encodeURIComponent(examId)}&student_id=eq.${encodeURIComponent(user.id)}&select=id,status,started_at&limit=1`;
  let response=await api(query);if(!response.ok)throw new Error("Không thể kiểm tra lượt thi.");let rows=await response.json();
- if(rows.length){if(rows[0].status==="submitted")throw new Error("Tài khoản này đã nộp bài cho kỳ thi.");attemptId=rows[0].id;const elapsed=Math.floor((Date.now()-new Date(rows[0].started_at).getTime())/1000);remaining=Math.max(0,exam.duration_minutes*60-elapsed);document.querySelector("#timer").textContent=formatTime(remaining);const saved=await api(`/rest/v1/responses?attempt_id=eq.${attemptId}&select=question_id,answer`);if(saved.ok)(await saved.json()).forEach(item=>{if(Number.isInteger(item.answer?.selected_option))answers[item.question_id]=item.answer.selected_option});render();return}
+ if(rows.length){if(rows[0].status==="submitted")throw new Error("Tài khoản này đã nộp bài cho kỳ thi.");attemptId=rows[0].id;const elapsed=Math.floor((Date.now()-new Date(rows[0].started_at).getTime())/1000),deadlineLeft=assignmentDeadline?Math.max(0,Math.floor((assignmentDeadline-Date.now())/1000)):Infinity;remaining=Math.min(Math.max(0,exam.duration_minutes*60-elapsed),deadlineLeft);document.querySelector("#timer").textContent=formatTime(remaining);const saved=await api(`/rest/v1/responses?attempt_id=eq.${attemptId}&select=question_id,answer`);if(saved.ok)(await saved.json()).forEach(item=>{if(Number.isInteger(item.answer?.selected_option))answers[item.question_id]=item.answer.selected_option});render();return}
  response=await api("/rest/v1/attempts",{method:"POST",headers:{"Content-Type":"application/json",Prefer:"return=representation"},body:JSON.stringify({exam_id:examId,student_id:user.id,status:"in_progress"})});
  if(!response.ok)throw new Error("Không thể tạo lượt thi. Hãy kiểm tra lại phân công kỳ thi.");attemptId=(await response.json())[0].id;
 }
