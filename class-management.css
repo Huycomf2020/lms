@@ -1,0 +1,12 @@
+.export-actions{display:flex;gap:8px}
+.enroll-form{display:grid;grid-template-columns:1fr auto;gap:10px;margin:16px 0}
+.enroll-form input{padding:12px;border:1px solid var(--line);border-radius:10px;font:inherit}
+@media print{
+ body.print-analytics .admin-top,body.print-analytics .admin-nav,body.print-analytics .admin-heading .heading-actions,body.print-analytics #question-toolbar,body.print-analytics #analytics-toolbar{display:none!important}
+ body.print-analytics .admin-shell{display:block}
+ body.print-analytics .admin-content{padding:0}
+ body.print-analytics .admin-panel{border:0}
+ body.print-analytics table{font-size:9px}
+ body.print-analytics th,body.print-analytics td{padding:7px}
+}
+
